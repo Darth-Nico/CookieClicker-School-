@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1040;
+            color: #ffd700;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 3em;
+            margin-bottom: 30px;
+        }
+
+        #cookie-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 300px;
+            height: 400px;
+            overflow: hidden;
+        }
+
+        #cookie {
+            width: 200px;
+            height: 200px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            filter: drop-shadow(0 0 10px #ffd700);
+            z-index: 1;
+        }
+
+        #cookie:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 15px #ffd700);
+        }
+
+        #cookie:active {
+            transform: scale(0.95);
+        }
+
+        #counter {
+            font-size: 2em;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            text-shadow: 0 0 5px #ffd700;
+        }
+
+        .cookie-click-effect {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            left: 50px !important;
+            top: 50px !important;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) translateX(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px) translateX(20px);
+            }
+        }
+
+        .glow {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+        }
+
+        .falling-cookie {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
+            width: 30px;
+            height: 30px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-20px) rotate(0deg);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(200px) rotate(180deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(400px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .fire-effect {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, 
+                rgba(255, 80, 0, 0.8) 0%,
+                rgba(255, 120, 0, 0.5) 30%,
+                rgba(255, 160, 0, 0.3) 70%,
+                transparent 100%);
+            border-radius: 50%;
+            z-index: 0;
+            animation: fireAnimation 0.5s infinite alternate;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        @keyframes fireAnimation {
+            0% {
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        #shop-container {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(26, 16, 64, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            max-width: 300px;
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upgrade-item:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .upgrade-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #quiz-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 16, 64, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            z-index: 1000;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        .quiz-option {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .quiz-option:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .upgrade-indicator {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            border: 2px solid #4CAF50;
+            animation: upgradeGlow 2s ease-out forwards;
+            z-index: 0;
+        }
+
+        @keyframes upgradeGlow {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+                border-color: #4CAF50;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+                border-color: #45a049;
+            }
+        }
+
+        #stats {
+            font-size: 1.2em;
+            margin-top: 5px;
+            color: #8b8b8b;
+        }
+
+        .settings-icon {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 1000;
+            filter: invert(83%) sepia(31%) saturate(638%) hue-rotate(358deg) brightness(101%) contrast(107%);
+        }
+
+        .settings-icon:hover {
+            transform: rotate(90deg);
+        }
+
+        .settings-menu {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            background: rgba(26, 16, 64, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 200px;
+            transform-origin: top left;
+            transform: scale(0);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+        }
+
+        .settings-menu.active {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .settings-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffd700;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .settings-menu-item:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .settings-divider {
+            height: 1px;
+            background: rgba(255, 215, 0, 0.3);
+            margin: 10px 0;
+        }
+
+        .settings-icon-small {
+            width: 20px;
+            height: 20px;
+            filter: invert(83%) sepia(31%) saturate(638%) hue-rotate(358deg) brightness(101%) contrast(107%);
+        }
+
+        .result-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(26, 16, 64, 0.95);
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            z-index: 1001;
+            min-width: 300px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .result-modal.correct {
+            border-color: #4CAF50;
+        }
+
+        .result-modal.incorrect {
+            border-color: #f44336;
+        }
+
+        .result-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+            animation: iconBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .result-text {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes iconBounce {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .result-particles {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFly 1s linear forwards;
+        }
+
+        @keyframes particleFly {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Voeg deze nieuwe styles toe voor de custom alert modal */
+        .custom-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(26, 16, 64, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            z-index: 1001;
+            min-width: 300px;
+            color: #ffd700;
+            animation: alertPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .custom-alert-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+            animation: alertIconPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .custom-alert-text {
+            font-size: 18px;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .custom-alert-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .custom-alert-button {
+            padding: 8px 20px;
+            border: 1px solid #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .custom-alert-button:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        @keyframes alertPopIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes alertIconPop {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .setting-option {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .option-choice {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.3s;
+        }
+
+        .option-choice.active {
+            opacity: 1;
+            color: #ffd700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .option-choice:hover {
+            opacity: 0.8;
+        }
+
+        .stats-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 16, 64, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 30px;
+            min-width: 400px;
+            max-width: 80%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #ffd700;
+            z-index: 1000;
+            scrollbar-width: none;  /* Voor Firefox */
+            -ms-overflow-style: none;  /* Voor Internet Explorer en Edge */
+        }
+
+        /* Voor Webkit browsers (Chrome, Safari, etc.) */
+        .stats-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        .achievement-item.locked {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .achievement-info {
+            flex-grow: 1;
+        }
+
+        .achievement-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .stats-divider {
+            height: 2px;
+            background: rgba(255, 215, 0, 0.3);
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .notification-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 215, 0, 0.2);
+            transition: .3s;
+            border-radius: 24px;
+            border: 1px solid #ffd700;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 3px;
+            background-color: #ffd700;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: rgba(255, 215, 0, 0.5);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .credits-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .credits-icon {
+            width: 25px;
+            height: 25px;
+            cursor: help;
+            transition: transform 0.3s;
+            filter: invert(83%) sepia(31%) saturate(638%) hue-rotate(358deg) brightness(101%) contrast(107%);
+        }
+
+        .credits-icon:hover {
+            transform: rotate(360deg);
+        }
+
+        .credits-icon:hover + .credits-popup {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .credits-popup {
+            position: absolute;
+            top: 35px;
+            right: 0;
+            background: rgba(26, 16, 64, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #ffd700;
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateY(-10px) scale(0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .credits-popup::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #ffd700;
+        }
+
+        .info-icon {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffd700;
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: help;
+            transition: all 0.3s;
+        }
+
+        .info-icon:hover {
+            transform: rotate(360deg);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .info-icon:hover + .credits-popup {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Voeg deze media queries toe aan het einde van de style sectie */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+                margin-bottom: 15px;
+            }
+
+            #cookie {
+                width: 150px;
+                height: 150px;
+            }
+
+            #cookie-container {
+                width: 200px;
+                height: 300px;
+            }
+
+            .glow {
+                width: 170px;
+                height: 170px;
+            }
+
+            #shop-container {
+                position: fixed;
+                right: 10px;
+                max-width: 250px;
+                font-size: 0.9em;
+            }
+
+            .upgrade-item {
+                padding: 8px;
+                font-size: 0.9em;
+            }
+
+            .settings-icon {
+                top: 10px;
+                left: 10px;
+                width: 25px;
+                height: 25px;
+            }
+
+            .settings-menu {
+                top: 45px;
+                left: 10px;
+                min-width: 180px;
+                font-size: 0.9em;
+            }
+
+            .info-icon {
+                top: 10px;
+                right: 10px;
+                width: 20px;
+                height: 20px;
+                font-size: 14px;
+            }
+
+            .credits-container {
+                top: 10px;
+                right: 10px;
+            }
+
+            .credits-popup {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .result-modal, .custom-alert {
+                min-width: 250px;
+                padding: 20px;
+                font-size: 0.9em;
+            }
+
+            .stats-container {
+                min-width: 300px;
+                padding: 20px;
+                max-height: 90vh;
+                font-size: 0.9em;
+            }
+        }
+
+        /* Extra kleine schermen (telefoons in portrait mode) */
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 5px;
+                overflow-x: hidden;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin: 5px 0;
+            }
+
+            #counter {
+                font-size: 1.2em;
+                padding: 10px 20px;
+            }
+
+            #stats {
+                font-size: 0.9em;
+            }
+
+            #cookie-container {
+                width: 160px;
+                height: 200px;
+                margin: 10px auto;
+            }
+
+            #cookie {
+                width: 120px;
+                height: 120px;
+            }
+
+            .glow {
+                width: 130px;
+                height: 130px;
+            }
+
+            /* Shop container als zwevend menu onderaan */
+            #shop-container {
+                position: fixed;
+                bottom: -70vh; /* Standaard verborgen */
+                left: 0;
+                right: 0;
+                height: 75vh;
+                max-height: 75vh;
+                background: rgba(26, 16, 64, 0.98);
+                transition: bottom 0.3s ease-in-out;
+                border-radius: 20px 20px 0 0;
+                padding: 10px;
+                z-index: 900;
+            }
+
+            #shop-container.active {
+                bottom: 0;
+            }
+
+            /* Shop toggle button */
+            #shop-toggle {
+                position: fixed;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(26, 16, 64, 0.95);
+                border: 2px solid #ffd700;
+                border-radius: 25px;
+                padding: 8px 20px;
+                color: #ffd700;
+                font-size: 0.9em;
+                z-index: 901;
+                cursor: pointer;
+            }
+
+            /* Maak modals kleiner */
+            .result-modal, 
+            .custom-alert,
+            #quiz-modal {
+                width: 90%;
+                min-width: unset;
+                padding: 15px;
+                font-size: 0.9em;
+            }
+
+            /* Maak stats modal volledig scherm */
+            .stats-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                height: 100%;
+                max-width: 100%;
+                max-height: 100%;
+                transform: none;
+                border-radius: 0;
+                padding: 15px;
+            }
+
+            /* Compactere settings menu */
+            .settings-menu {
+                top: 45px;
+                left: 5px;
+                min-width: 160px;
+                font-size: 0.8em;
+            }
+
+            /* Kleinere icons */
+            .settings-icon,
+            .info-icon {
+                width: 20px;
+                height: 20px;
+            }
+
+            .info-icon {
+                font-size: 12px;
+            }
+        }
+
+        /* Landscape mode voor telefoons */
+        @media screen and (max-height: 480px) and (orientation: landscape) {
+            #cookie {
+                width: 100px;
+                height: 100px;
+            }
+
+            #cookie-container {
+                width: 140px;
+                height: 200px;
+            }
+
+            .glow {
+                width: 120px;
+                height: 120px;
+            }
+
+            #shop-container {
+                top: 50%;
+                transform: translateY(-50%);
+                max-height: 80vh;
+                right: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin: 5px 0;
+            }
+
+            #counter {
+                margin: 10px 0;
+            }
+        }
+
+        /* Shop toggle button */
+        #shop-toggle {
+            display: none; /* Hidden by default on desktop */
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 16, 64, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 25px;
+            padding: 8px 20px;
+            color: #ffd700;
+            font-size: 0.9em;
+            z-index: 901;
+            cursor: pointer;
+        }
+
+        @media screen and (max-width: 480px) {
+            #shop-toggle {
+                display: block; /* Show on mobile */
+            }
+
+            #shop-container {
+                position: fixed;
+                bottom: -70vh; /* Hidden by default */
+                left: 0;
+                right: 0;
+                height: 75vh;
+                max-height: 75vh;
+                background: rgba(26, 16, 64, 0.98);
+                transition: bottom 0.3s ease-in-out;
+                border-radius: 20px 20px 0 0;
+                padding: 10px;
+                z-index: 900;
+                overflow-y: auto;
+            }
+
+            #shop-container.active {
+                bottom: 0; /* Shown when active */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="credits-container">
+        <div class="info-icon">i</div>
+        <div class="credits-popup">Ontwikkeld door: Niels Coert</div>
+    </div>
+
+    <audio id="clickSound" preload="auto">
+        <source src="pop-268648.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="correctSound" preload="auto">
+        <source src="correct-156911.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="wrongSound" preload="auto">
+        <source src="wrong-47985.mp3" type="audio/mpeg">
+    </audio>
+
+    <img src="https://cdn-icons-png.flaticon.com/512/126/126472.png" alt="Settings" class="settings-icon" id="settings-icon">
+    <div class="settings-menu" id="settings-menu">
+        <div class="settings-menu-item">
+            <img src="https://cdn-icons-png.flaticon.com/512/727/727269.png" alt="Sound" class="settings-icon-small">
+            <div class="setting-option">
+                Geluid: 
+                <span class="option-choice active" data-option="aan">Aan</span> / 
+                <span class="option-choice" data-option="uit">Uit</span>
+            </div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-menu-item">
+            <img src="https://cdn-icons-png.flaticon.com/512/2645/2645897.png" alt="Stats" class="settings-icon-small">
+            Statistieken
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-menu-item">
+            <img src="https://cdn-icons-png.flaticon.com/512/561/561189.png" alt="Reset" class="settings-icon-small">
+            Spel Resetten
+        </div>
+    </div>
+
+    <h1>Cookie Clicker</h1>
+    <div id="counter">
+        Cookies: <span id="cookie-count">0</span>
+        <div id="stats">per seconde: <span id="cps-count">0</span></div>
+    </div>
+    <div id="cookie-container">
+        <div class="glow"></div>
+        <img id="cookie" src="cookie.png" alt="Cookie">
+    </div>
+
+    <button id="shop-toggle">Upgrades ▲</button>
+
+    <div id="shop-container">
+        <h2>Upgrades</h2>
+        <div id="upgrades-list"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div id="quiz-modal">
+        <h3>Beantwoord deze vraag om de upgrade te kopen:</h3>
+        <p id="quiz-question"></p>
+        <div id="quiz-options"></div>
+    </div>
+
+    <div id="stats-modal" class="modal-overlay" style="display: none;">
+        <div class="stats-container">
+            <h2>Statistieken & Achievements</h2>
+            <div id="achievements-list"></div>
+            <div class="notification-toggle">
+                <span>Achievement Meldingen:</span>
+                <label class="switch">
+                    <input type="checkbox" id="achievement-notifications" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="stats-divider"></div>
+            <div id="stats-list"></div>
+            <button class="custom-alert-button" onclick="closeStatsModal()">Sluiten</button>
+        </div>
+    </div>
+
+    <script>
+        const upgrades = [
+            { id: 'cursor', name: 'Cursor', baseCost: 15, cps: 0.1, count: 0, multiplier: 1.15 },
+            { id: 'grandma', name: 'Oma', baseCost: 100, cps: 1, count: 0, multiplier: 1.15 },
+            { id: 'farm', name: 'Boerderij', baseCost: 500, cps: 4, count: 0, multiplier: 1.15 },
+            { id: 'mine', name: 'Mijn', baseCost: 2000, cps: 10, count: 0, multiplier: 1.15 }
+        ];
+
+        let cookies = 0;
+        let streakCount = 0;
+        const cookieElement = document.getElementById('cookie');
+        const counterElement = document.getElementById('cookie-count');
+        const cookieContainer = document.getElementById('cookie-container');
+        let lastClickTime = 0;
+        let clickStreak = 0;
+        let streakTimeout;
+        let fireEffect;
+        let cookiesPerSecond = 0;
+        let selectedUpgrade = null;
+        let soundEnabled = true;
+        const clickSound = document.getElementById('clickSound');
+        const correctSound = document.getElementById('correctSound');
+        const wrongSound = document.getElementById('wrongSound');
+
+        // Update de dutchQuestions array
+        const dutchQuestions = [
+            {
+                question: "Welke planeet staat het dichtst bij de zon?",
+                correct_answer: "Mercurius",
+                incorrect_answers: ["Venus", "Mars", "Jupiter"]
+            },
+            {
+                question: "Hoeveel harten heeft een octopus?",
+                correct_answer: "3",
+                incorrect_answers: ["1", "2", "4"]
+            },
+            {
+                question: "Wat is de hoofdstad van Japan?",
+                correct_answer: "Tokyo",
+                incorrect_answers: ["Kyoto", "Osaka", "Hiroshima"]
+            },
+            {
+                question: "Welk element heeft het symbool 'Au'?",
+                correct_answer: "Goud",
+                incorrect_answers: ["Zilver", "Koper", "Aluminium"]
+            },
+            {
+                question: "Wie schreef 'Romeo en Julia'?",
+                correct_answer: "William Shakespeare",
+                incorrect_answers: ["Charles Dickens", "Jane Austen", "Mark Twain"]
+            },
+            {
+                question: "Hoeveel botten heeft een volwassen mens gemiddeld?",
+                correct_answer: "206",
+                incorrect_answers: ["186", "216", "196"]
+            },
+            {
+                question: "Wat is de snelste vogel ter wereld?",
+                correct_answer: "Slechtvalk",
+                incorrect_answers: ["Struisvogel", "Adelaar", "Kolibrie"]
+            },
+            {
+                question: "In welk jaar landde de eerste mens op de maan?",
+                correct_answer: "1969",
+                incorrect_answers: ["1965", "1971", "1973"]
+            },
+            {
+                question: "Wat is de langste rivier ter wereld?",
+                correct_answer: "Nijl",
+                incorrect_answers: ["Amazone", "Mississippi", "Yangtze"]
+            },
+            {
+                question: "Hoeveel zijden heeft een kubus?",
+                correct_answer: "6",
+                incorrect_answers: ["4", "8", "12"]
+            },
+            {
+                question: "Welk jaar heeft 366 dagen?",
+                correct_answer: "Schrikkeljaar",
+                incorrect_answers: ["Normaal jaar", "Winterjaar", "Zomerjaar"]
+            },
+            {
+                question: "Wat is de hardste natuurlijke stof op aarde?",
+                correct_answer: "Diamant",
+                incorrect_answers: ["Graniet", "IJzer", "Titanium"]
+            }
+        ];
+
+        // Voeg deze variabele toe aan het begin van het script
+        let correctAnswersCount = 0;
+
+        function createFallingCookie() {
+            const cookie = document.createElement('img');
+            cookie.src = 'cookie.png';
+            cookie.className = 'falling-cookie';
+            
+            const startX = Math.random() * 300;
+            const duration = 1.5 + Math.random() * 0.5;
+            const size = 15 + Math.random() * 20;
+
+            cookie.style.left = startX + 'px';
+            cookie.style.width = size + 'px';
+            cookie.style.height = size + 'px';
+            cookie.style.animationDuration = duration + 's';
+
+            cookieContainer.appendChild(cookie);
+
+            setTimeout(() => {
+                cookie.remove();
+            }, duration * 1000);
+        }
+
+        function initializeFireEffect() {
+            fireEffect = document.createElement('div');
+            fireEffect.className = 'fire-effect';
+            cookieContainer.insertBefore(fireEffect, cookieContainer.firstChild);
+        }
+
+        function updateStreak() {
+            const currentTime = Date.now();
+            
+            if (currentTime - lastClickTime < 500) {
+                clickStreak++;
+                streakCount++;
+                
+                if (clickStreak >= 30) {
+                    fireEffect.style.opacity = '1';
+                }
+            } else {
+                clickStreak = 0;
+                streakCount = 1;
+                fireEffect.style.opacity = '0';
+            }
+
+            clearTimeout(streakTimeout);
+            streakTimeout = setTimeout(() => {
+                clickStreak = 0;
+                streakCount = 0;
+                fireEffect.style.opacity = '0';
+            }, 500);
+
+            lastClickTime = currentTime;
+        }
+
+        function calculateCost(upgrade) {
+            return Math.floor(upgrade.baseCost * Math.pow(upgrade.multiplier, upgrade.count));
+        }
+
+        function updateShop() {
+            const shopList = document.getElementById('upgrades-list');
+            shopList.innerHTML = '';
+            
+            upgrades.forEach(upgrade => {
+                const cost = calculateCost(upgrade);
+                const item = document.createElement('div');
+                item.className = `upgrade-item ${cookies < cost ? 'locked' : ''}`;
+                item.innerHTML = `
+                    <div>
+                        <div>${upgrade.name} (${upgrade.count})</div>
+                        <small>${upgrade.cps} cookies/s</small>
+                    </div>
+                    <div>${cost} cookies</div>
+                `;
+                
+                item.onclick = () => tryPurchaseUpgrade(upgrade);
+                shopList.appendChild(item);
+            });
+        }
+
+        async function fetchTriviaQuestion() {
+            // Kies een willekeurige vraag uit de Nederlandse set
+            const randomIndex = Math.floor(Math.random() * dutchQuestions.length);
+            return dutchQuestions[randomIndex];
+        }
+
+        async function showQuizModal(upgrade) {
+            selectedUpgrade = upgrade;
+            const question = await fetchTriviaQuestion();
+            
+            if (!question) return;
+
+            const modal = document.getElementById('quiz-modal');
+            const overlay = document.getElementById('modal-overlay');
+            const questionEl = document.getElementById('quiz-question');
+            const optionsEl = document.getElementById('quiz-options');
+
+            questionEl.innerHTML = question.question;
+            
+            const options = [...question.incorrect_answers, question.correct_answer]
+                .sort(() => Math.random() - 0.5);
+
+            optionsEl.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('div');
+                button.className = 'quiz-option';
+                button.innerHTML = option;
+                button.dataset.answer = option;
+                button.onclick = () => checkAnswer(option, question.correct_answer);
+                optionsEl.appendChild(button);
+            });
+
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+        }
+
+        function showResultModal(correct) {
+            const modal = document.createElement('div');
+            modal.className = `result-modal ${correct ? 'correct' : 'incorrect'}`;
+            
+            const icon = correct ? '✅' : '❌';
+            const text = correct ? 'Correct!' : 'Helaas, dat is niet correct!';
+            
+            modal.innerHTML = `
+                <div class="result-icon">${icon}</div>
+                <div class="result-text">${text}</div>
+            `;
+            
+            document.body.appendChild(modal);
+
+            // Voeg particles toe voor correct antwoord
+            if (correct) {
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'result-particles';
+                    particle.style.backgroundColor = '#4CAF50';
+                    
+                    // Random positie en richting
+                    const angle = (Math.random() * Math.PI * 2);
+                    const distance = 100 + Math.random() * 100;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    particle.style.setProperty('--tx', `${tx}px`);
+                    particle.style.setProperty('--ty', `${ty}px`);
+                    
+                    modal.appendChild(particle);
+                }
+            }
+
+            // Verwijder de modal na 1.5 seconden
+            setTimeout(() => {
+                modal.remove();
+            }, 1500);
+        }
+
+        function checkAnswer(selected, correct) {
+            const isCorrect = selected === correct;
+            
+            if (isCorrect) {
+                playSound(correctSound);
+                correctAnswersCount++; // Verhoog de teller bij correct antwoord
+                saveGame(); // Sla de nieuwe score op
+                updateStats(); // Update achievements
+            } else {
+                playSound(wrongSound);
+            }
+            
+            showResultModal(isCorrect);
+            
+            setTimeout(() => {
+                if (isCorrect) {
+                    purchaseUpgrade(selectedUpgrade);
+                }
+                closeQuizModal();
+            }, 1500);
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quiz-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+            selectedUpgrade = null;
+        }
+
+        function tryPurchaseUpgrade(upgrade) {
+            const cost = calculateCost(upgrade);
+            if (cookies >= cost) {
+                showQuizModal(upgrade);
+            }
+        }
+
+        function purchaseUpgrade(upgrade) {
+            const cost = calculateCost(upgrade);
+            cookies -= cost;
+            upgrade.count++;
+            cookiesPerSecond = upgrades.reduce((total, upgrade) => {
+                return total + (upgrade.cps * upgrade.count);
+            }, 0);
+            updateShop();
+            updateCounter();
+            showUpgradeEffect();
+            saveGame();
+            updateStats();
+        }
+
+        function showUpgradeEffect() {
+            const effect = document.createElement('div');
+            effect.className = 'upgrade-indicator';
+            cookieContainer.appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 2000);
+        }
+
+        setInterval(() => {
+            cookies += cookiesPerSecond;
+            updateCounter();
+            saveGame();
+        }, 1000);
+
+        function updateCounter() {
+            counterElement.textContent = Math.floor(cookies);
+            document.getElementById('cps-count').textContent = cookiesPerSecond.toFixed(1);
+            updateShop();
+            updateTitle();
+        }
+
+        window.onload = function() {
+            initializeFireEffect();
+            loadGame();
+            calculateOfflineProgress();
+            updateShop();
+        };
+
+        cookieElement.addEventListener('click', (e) => {
+            cookies = Math.floor(cookies + 1);
+            counterElement.textContent = Math.floor(cookies);
+            playSound(clickSound);
+            updateTitle();
+            
+            updateStreak();
+            
+            const clickEffect = document.createElement('div');
+            clickEffect.className = 'cookie-click-effect';
+            clickEffect.textContent = streakCount > 1 ? `+${streakCount}` : '+1';
+            
+            cookieContainer.appendChild(clickEffect);
+            
+            const numCookies = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numCookies; i++) {
+                setTimeout(() => {
+                    createFallingCookie();
+                }, i * 100);
+            }
+            
+            setTimeout(() => {
+                clickEffect.remove();
+            }, 1000);
+
+            saveGame();
+            updateStats();
+        });
+
+        function updateTitle() {
+            document.title = `${Math.floor(cookies)} cookies | Cookie Clicker`;
+        }
+
+        // Settings menu functionality
+        const settingsIcon = document.getElementById('settings-icon');
+        const settingsMenu = document.getElementById('settings-menu');
+        let isMenuOpen = false;
+
+        settingsIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isMenuOpen = !isMenuOpen;
+            settingsMenu.classList.toggle('active');
+        });
+
+        // Sluit menu als er ergens anders wordt geklikt
+        document.addEventListener('click', (e) => {
+            if (isMenuOpen && !settingsMenu.contains(e.target)) {
+                isMenuOpen = false;
+                settingsMenu.classList.remove('active');
+            }
+        });
+
+        // Voorkom dat clicks op het menu het menu sluiten
+        settingsMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Voeg deze functies toe voor het opslaan en laden van de game state
+        function saveGame() {
+            const gameState = {
+                cookies: cookies,
+                upgrades: upgrades.map(upgrade => ({
+                    id: upgrade.id,
+                    count: upgrade.count,
+                    baseCost: upgrade.baseCost,
+                    cps: upgrade.cps,
+                    multiplier: upgrade.multiplier
+                })),
+                cookiesPerSecond: cookiesPerSecond,
+                lastSaved: Date.now(),
+                soundEnabled: soundEnabled,
+                achievements: achievements.map(a => ({
+                    id: a.id,
+                    earned: a.earned
+                })),
+                achievementNotificationsEnabled: achievementNotificationsEnabled,
+                correctAnswersCount: correctAnswersCount
+            };
+            localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
+        }
+
+        function loadGame() {
+            const savedState = localStorage.getItem('cookieClickerSave');
+            if (savedState) {
+                const gameState = JSON.parse(savedState);
+                cookies = gameState.cookies;
+                soundEnabled = gameState.soundEnabled ?? true;
+                
+                // Update de geluid opties weergave
+                const aanOption = document.querySelector('[data-option="aan"]');
+                const uitOption = document.querySelector('[data-option="uit"]');
+                if (aanOption && uitOption) {
+                    aanOption.classList.toggle('active', soundEnabled);
+                    uitOption.classList.toggle('active', !soundEnabled);
+                }
+
+                // Update alle upgrades met opgeslagen waardes
+                gameState.upgrades.forEach(savedUpgrade => {
+                    const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
+                    if (upgrade) {
+                        upgrade.count = savedUpgrade.count;
+                        upgrade.baseCost = savedUpgrade.baseCost;
+                        upgrade.cps = savedUpgrade.cps;
+                        upgrade.multiplier = savedUpgrade.multiplier;
+                    }
+                });
+
+                // Herbereken cookiesPerSecond op basis van geladen upgrades
+                cookiesPerSecond = upgrades.reduce((total, upgrade) => {
+                    return total + (upgrade.cps * upgrade.count);
+                }, 0);
+
+                // Update UI
+                updateCounter();
+                updateShop();
+                updateTitle();
+
+                // Laad achievements
+                if (gameState.achievements) {
+                    gameState.achievements.forEach(savedAchievement => {
+                        const achievement = achievements.find(a => a.id === savedAchievement.id);
+                        if (achievement) {
+                            achievement.earned = savedAchievement.earned;
+                        }
+                    });
+                }
+
+                achievementNotificationsEnabled = gameState.achievementNotificationsEnabled ?? true;
+                
+                // Update de notification toggle
+                document.getElementById('achievement-notifications').checked = achievementNotificationsEnabled;
+                correctAnswersCount = gameState.correctAnswersCount ?? 0;
+            }
+        }
+
+        function resetGame() {
+            showCustomAlert('Weet je zeker dat je het spel wilt resetten? Alle voortgang gaat verloren!', 'warning', () => {
+                // Reset game data
+                localStorage.removeItem('cookieClickerSave');
+                cookies = 0;
+                cookiesPerSecond = 0;
+                
+                // Reset upgrades
+                upgrades.forEach(upgrade => {
+                    upgrade.count = 0;
+                });
+
+                // Reset achievements
+                achievements.forEach(achievement => {
+                    achievement.earned = false;
+                });
+                
+                // Update UI
+                updateCounter();
+                updateShop();
+                updateTitle();
+                updateStats();
+                
+                correctAnswersCount = 0; // Reset ook de trivia teller
+                
+                showCustomAlert('Spel is gereset!', 'success');
+            });
+        }
+
+        // Voeg offline progressie toe
+        function calculateOfflineProgress() {
+            const savedState = localStorage.getItem('cookieClickerSave');
+            if (savedState) {
+                const gameState = JSON.parse(savedState);
+                const timeDiff = Date.now() - gameState.lastSaved;
+                const secondsOffline = Math.floor(timeDiff / 1000);
+                const offlineProduction = cookiesPerSecond * secondsOffline;
+                
+                if (offlineProduction > 0) {
+                    cookies += offlineProduction;
+                    showCustomAlert(`Je hebt ${Math.floor(offlineProduction)} cookies verdiend terwijl je weg was!`, 'offline');
+                    updateCounter();
+                    updateShop();
+                }
+            }
+        }
+
+        // Update de settings menu items met onclick handlers
+        document.querySelectorAll('.settings-menu-item').forEach(item => {
+            if (item.textContent.includes('Spel Resetten')) {
+                item.onclick = resetGame;
+            } else if (item.textContent.includes('Geluid')) {
+                const aanOption = item.querySelector('[data-option="aan"]');
+                const uitOption = item.querySelector('[data-option="uit"]');
+                
+                function updateSoundDisplay() {
+                    aanOption.classList.toggle('active', soundEnabled);
+                    uitOption.classList.toggle('active', !soundEnabled);
+                }
+                
+                aanOption.onclick = () => {
+                    soundEnabled = true;
+                    updateSoundDisplay();
+                    showCustomAlert('Geluid staat nu aan', 'info');
+                };
+                
+                uitOption.onclick = () => {
+                    soundEnabled = false;
+                    updateSoundDisplay();
+                    showCustomAlert('Geluid staat nu uit', 'info');
+                };
+                
+                // Initialize display
+                updateSoundDisplay();
+            }
+        });
+
+        // Auto-save elke minuut
+        setInterval(saveGame, 60000);
+
+        // Voeg deze event listeners toe voor automatisch opslaan
+        window.addEventListener('beforeunload', (e) => {
+            saveGame();
+        });
+
+        // Voeg deze nieuwe functie toe voor custom alerts
+        function showCustomAlert(message, type = 'info', callback = null) {
+            const modal = document.createElement('div');
+            modal.className = 'custom-alert';
+            
+            // Kies icon op basis van type
+            let icon = '💡'; // default info
+            if (type === 'success') icon = '🎉';
+            if (type === 'warning') icon = '⚠️';
+            if (type === 'error') icon = '❌';
+            if (type === 'offline') icon = '⏰';
+            if (type === 'reset') icon = '🔄';
+
+            modal.innerHTML = `
+                <div class="custom-alert-icon">${icon}</div>
+                <div class="custom-alert-text">${message}</div>
+                <div class="custom-alert-buttons">
+                    ${callback ? `
+                        <button class="custom-alert-button" onclick="this.parentElement.parentElement.remove()">Annuleren</button>
+                        <button class="custom-alert-button" onclick="handleAlertConfirm(this, ${callback.toString()})">OK</button>
+                    ` : `
+                        <button class="custom-alert-button" onclick="this.parentElement.parentElement.remove()">OK</button>
+                    `}
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function handleAlertConfirm(button, callback) {
+            button.parentElement.parentElement.remove();
+            callback();
+        }
+
+        // Voeg deze functie toe voor het afspelen van geluiden
+        function playSound(sound) {
+            if (soundEnabled) {
+                sound.currentTime = 0;
+                sound.play();
+            }
+        }
+
+        // Voeg deze achievements definitie toe
+        const achievements = [
+            {
+                id: 'first_cookie',
+                name: 'Eerste Hap!',
+                description: 'Verzamel je eerste cookie',
+                icon: '🍪',
+                condition: () => cookies >= 1,
+                earned: false
+            },
+            {
+                id: 'cookie_10',
+                name: 'Cookie Verzamelaar',
+                description: 'Verzamel 10 cookies',
+                icon: '🏆',
+                condition: () => cookies >= 10,
+                earned: false
+            },
+            {
+                id: 'first_cursor',
+                name: 'Extra Vinger',
+                description: 'Koop je eerste cursor',
+                icon: '👆',
+                condition: () => upgrades.find(u => u.id === 'cursor').count >= 1,
+                earned: false
+            },
+            {
+                id: 'first_grandma',
+                name: 'Oma\'s Hulp',
+                description: 'Huur je eerste oma in',
+                icon: '👵',
+                condition: () => upgrades.find(u => u.id === 'grandma').count >= 1,
+                earned: false
+            },
+            {
+                id: 'cookie_100',
+                name: 'Cookie Meester',
+                description: 'Verzamel 100 cookies',
+                icon: '👑',
+                condition: () => cookies >= 100,
+                earned: false
+            },
+            {
+                id: 'trivia_5',
+                name: 'Quiz Beginner',
+                description: 'Beantwoord 5 vragen correct',
+                icon: '📚',
+                condition: () => correctAnswersCount >= 5,
+                earned: false
+            },
+            {
+                id: 'trivia_15',
+                name: 'Trivia Expert',
+                description: 'Beantwoord 15 vragen correct',
+                icon: '🎓',
+                condition: () => correctAnswersCount >= 15,
+                earned: false
+            },
+            {
+                id: 'trivia_master',
+                name: 'Trivia Master',
+                description: 'Beantwoord 30 vragen correct',
+                icon: '🏆',
+                condition: () => correctAnswersCount >= 30,
+                earned: false
+            }
+        ];
+
+        // Voeg deze statistieken functies toe
+        function updateStats() {
+            checkAchievements();
+            if (document.getElementById('stats-modal').style.display === 'block') {
+                showStats();
+            }
+        }
+
+        function showStats() {
+            const achievementsList = document.getElementById('achievements-list');
+            const statsList = document.getElementById('stats-list');
+
+            // Toon achievements
+            achievementsList.innerHTML = achievements.map(achievement => `
+                <div class="achievement-item ${achievement.earned ? '' : 'locked'}">
+                    <div class="achievement-icon">${achievement.icon}</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">${achievement.name}</div>
+                        <div class="achievement-desc">${achievement.description}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Toon statistieken
+            statsList.innerHTML = `
+                <div class="stat-item">
+                    <span>Totaal Cookies:</span>
+                    <span>${Math.floor(cookies)}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Cookies per seconde:</span>
+                    <span>${cookiesPerSecond.toFixed(1)}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Aantal Cursors:</span>
+                    <span>${upgrades.find(u => u.id === 'cursor').count}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Aantal Oma's:</span>
+                    <span>${upgrades.find(u => u.id === 'grandma').count}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Achievements Behaald:</span>
+                    <span>${achievements.filter(a => a.earned).length}/${achievements.length}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Correcte Antwoorden:</span>
+                    <span>${correctAnswersCount}</span>
+                </div>
+            `;
+        }
+
+        function checkAchievements() {
+            achievements.forEach(achievement => {
+                if (!achievement.earned && achievement.condition()) {
+                    achievement.earned = true;
+                    if (achievementNotificationsEnabled) {
+                        showCustomAlert(`Achievement Behaald: ${achievement.name}!`, 'success');
+                    }
+                }
+            });
+        }
+
+        function openStatsModal() {
+            document.getElementById('stats-modal').style.display = 'block';
+            showStats();
+        }
+
+        function closeStatsModal() {
+            document.getElementById('stats-modal').style.display = 'none';
+        }
+
+        // Update de click handlers voor de statistieken knop
+        document.querySelectorAll('.settings-menu-item').forEach(item => {
+            if (item.textContent.includes('Statistieken')) {
+                item.onclick = openStatsModal;
+            }
+        });
+
+        // Voeg deze variabele toe
+        let achievementNotificationsEnabled = true;
+
+        // Voeg deze event listener toe voor de notification toggle
+        document.getElementById('achievement-notifications').addEventListener('change', function() {
+            achievementNotificationsEnabled = this.checked;
+            saveGame();
+        });
+
+        // Voeg deze code toe voor de shop toggle functionaliteit
+        const shopToggle = document.getElementById('shop-toggle');
+        const shopContainer = document.getElementById('shop-container');
+        let isShopOpen = false;
+
+        shopToggle.addEventListener('click', () => {
+            isShopOpen = !isShopOpen;
+            shopContainer.classList.toggle('active');
+            shopToggle.innerHTML = `Upgrades ${isShopOpen ? '▼' : '▲'}`;
+        });
+
+        // Sluit shop bij klikken buiten shop area
+        document.addEventListener('click', (e) => {
+            if (isShopOpen && 
+                !shopContainer.contains(e.target) && 
+                e.target !== shopToggle) {
+                isShopOpen = false;
+                shopContainer.classList.remove('active');
+                shopToggle.innerHTML = 'Upgrades ▲';
+            }
+        });
+
+        // Voorkom sluiten bij klikken in shop
+        shopContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    </script>
+</body>
+</html> 
