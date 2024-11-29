@@ -202,20 +202,25 @@
             padding: 30px;
             border-radius: 15px;
             border: 2px solid #ffd700;
-            z-index: 1000;
+            z-index: 1002;
             max-width: 500px;
             width: 90%;
         }
 
         .modal-overlay {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
+            z-index: 1001;
+            display: none; /* Standaard verborgen */
+        }
+
+        /* Wanneer de overlay actief moet zijn */
+        .modal-overlay.active {
+            display: block;
         }
 
         .quiz-option {
@@ -990,7 +995,341 @@
                 bottom: 0; /* Shown when active */
             }
         }
+
+        .leaderboard-container {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(26, 16, 64, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ffd700;
+            max-width: 300px;
+            color: #ffd700;
+        }
+
+        .leaderboard-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .leaderboard-rank {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .leaderboard-name {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .leaderboard-score {
+            font-weight: bold;
+        }
+
+        .player-id {
+            margin-top: 15px;
+            padding: 8px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 5px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        @media screen and (max-width: 768px) {
+            .leaderboard-container {
+                position: fixed;
+                left: 10px;
+                max-width: 250px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .leaderboard-container {
+                display: none; /* Verberg op kleine schermen */
+            }
+        }
+
+        /* Voeg een leaderboard knop toe aan het settings menu */
+        .leaderboard-menu-item {
+            display: none; /* Alleen zichtbaar op kleine schermen */
+        }
+
+        @media screen and (max-width: 480px) {
+            .leaderboard-menu-item {
+                display: flex;
+            }
+        }
+
+        .leaderboard-item.current-player {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #ffd700;
+        }
+
+        .player-stats-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(26, 16, 64, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 25px;
+            z-index: 1002;
+            min-width: 300px;
+            color: #ffd700;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .current-player-stat {
+            background: rgba(255, 215, 0, 0.2) !important;
+            border: 1px solid #ffd700;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .player-stats-close {
+            cursor: pointer;
+            font-size: 1.5em;
+            padding: 5px 10px;
+            transition: all 0.3s;
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .player-stats-close:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.1);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            display: none; /* Standaard verborgen */
+        }
+
+        /* Wanneer de overlay actief moet zijn */
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .player-stats-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .player-stats-id {
+            font-size: 1.2em;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        .player-stats-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .player-stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .leaderboard-name {
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .leaderboard-name:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
     </style>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA90Lx9ieZ3n4KjWcFcYeRojKDSVaYvjeM",
+            authDomain: "leaderbor-4f27b.firebaseapp.com",
+            databaseURL: "https://leaderbor-4f27b-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "leaderbor-4f27b",
+            storageBucket: "leaderbor-4f27b.firebasestorage.app",
+            messagingSenderId: "489555480327",
+            appId: "1:489555480327:web:a39178f4ba22a705c7bfa2"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Maak de database beschikbaar voor andere functies
+        window.updateLeaderboard = function() {
+            const leaderboardRef = ref(database, 'leaderboard');
+            
+            onValue(leaderboardRef, (snapshot) => {
+                const leaderboardList = document.getElementById('leaderboard-list');
+                const data = [];
+                
+                snapshot.forEach((childSnapshot) => {
+                    data.push({
+                        uid: childSnapshot.val().uid,
+                        score: childSnapshot.val().score
+                    });
+                });
+                
+                // Sorteer de data van hoog naar laag
+                const sortedData = data.sort((a, b) => b.score - a.score).slice(0, 10);
+                
+                leaderboardList.innerHTML = sortedData.map((entry, index) => `
+                    <div class="leaderboard-item ${entry.uid === playerUID ? 'current-player' : ''}">
+                        <span class="leaderboard-rank">#${index + 1}</span>
+                        <span class="leaderboard-name" onclick="showPlayerStats('${entry.uid}')">${entry.uid}</span>
+                        <span class="leaderboard-score">${Math.floor(entry.score)}</span>
+                    </div>
+                `).join('');
+            });
+        }
+
+        window.updatePlayerScore = function() {
+            if (!playerUID || cookies <= 0) return;
+            
+            const playerRef = ref(database, 'leaderboard/' + playerUID);
+            set(playerRef, {
+                uid: playerUID,
+                score: Math.floor(cookies),
+                cookiesPerSecond: cookiesPerSecond,
+                lastUpdated: Date.now()
+            }).catch(error => {
+                console.error("Error updating score:", error);
+            });
+        }
+        // Verwijder de oude database referentie bij reset
+        window.resetLeaderboardScore = function() {
+            const playerRef = ref(database, 'leaderboard/' + playerUID);
+            set(playerRef, null);
+        }
+
+        // Functie om speler statistieken op te halen en weer te geven
+        window.showPlayerStats = async function(uid) {
+            const playerRef = ref(database, `leaderboard/${uid}`);
+            const snapshot = await get(playerRef);
+            
+            if (snapshot.exists()) {
+                const playerData = snapshot.val();
+                
+                // Verwijder bestaande modals en overlays
+                const existingModals = document.querySelectorAll('.player-stats-modal, .modal-overlay');
+                existingModals.forEach(modal => modal.remove());
+                
+                // Maak de modal
+                const modal = document.createElement('div');
+                modal.className = 'player-stats-modal';
+                modal.innerHTML = `
+                    <div class="player-stats-header">
+                        <div class="player-stats-id">${playerData.uid}</div>
+                        <div class="player-stats-close" onclick="closePlayerStatsModal(this)">×</div>
+                    </div>
+                    <div class="player-stats-content">
+                        <div class="player-stat-item">
+                            <span>Totaal Cookies:</span>
+                            <span>${Math.floor(playerData.score).toLocaleString()}</span>
+                        </div>
+                        <div class="player-stat-item">
+                            <span>Rang:</span>
+                            <span>#${await getPlayerRank(playerData.score)}</span>
+                        </div>
+                        <div class="player-stat-item">
+                            <span>Cookies per seconde:</span>
+                            <span>${(playerData.cookiesPerSecond || 0).toFixed(1)}</span>
+                        </div>
+                        ${playerData.uid === playerUID ? `
+                            <div class="player-stat-item current-player-stat">
+                                <span>Dit ben jij! 👑</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Voeg de overlay toe
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay active';
+                overlay.onclick = () => closePlayerStatsModal(modal.querySelector('.player-stats-close'));
+                
+                document.body.appendChild(overlay);
+                document.body.appendChild(modal);
+                
+                // Animatie effect
+                setTimeout(() => {
+                    modal.style.opacity = '1';
+                    modal.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 10);
+            }
+        }
+
+        window.closePlayerStatsModal = function(closeButton) {
+            const modal = closeButton.closest('.player-stats-modal');
+            const overlays = document.querySelectorAll('.modal-overlay');
+            
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                
+                setTimeout(() => {
+                    modal.remove();
+                    // Verwijder alle overlays
+                    overlays.forEach(overlay => overlay.remove());
+                }, 300);
+            }
+        }
+
+        // Helper functie voor het bepalen van de rang moet ook beschikbaar zijn
+        window.getPlayerRank = async function(score) {
+            const leaderboardRef = ref(database, 'leaderboard');
+            const snapshot = await get(leaderboardRef);
+            const scores = [];
+            
+            snapshot.forEach((childSnapshot) => {
+                scores.push(childSnapshot.val().score);
+            });
+            
+            scores.sort((a, b) => b - a);
+            return scores.findIndex(s => s === score) + 1;
+        }
+
+        // Update de click handler voor mobiele leaderboard toggle
+        document.querySelector('.leaderboard-menu-item').addEventListener('click', () => {
+            const leaderboard = document.getElementById('leaderboard');
+            const currentDisplay = window.getComputedStyle(leaderboard).display;
+            leaderboard.style.display = currentDisplay === 'none' ? 'block' : 'none';
+        });
+    </script>
 </head>
 <body>
     <div class="credits-container">
@@ -1027,6 +1366,10 @@
         <div class="settings-menu-item">
             <img src="https://cdn-icons-png.flaticon.com/512/561/561189.png" alt="Reset" class="settings-icon-small">
             Spel Resetten
+        </div>
+        <div class="settings-menu-item leaderboard-menu-item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1603/1603847.png" alt="Leaderboard" class="settings-icon-small">
+            Leaderboard
         </div>
     </div>
 
@@ -1069,6 +1412,14 @@
             <div id="stats-list"></div>
             <button class="custom-alert-button" onclick="closeStatsModal()">Sluiten</button>
         </div>
+    </div>
+
+    <div class="leaderboard-container" id="leaderboard">
+        <h2 class="leaderboard-title">Leaderboard</h2>
+        <div id="leaderboard-list">
+            <!-- Leaderboard items komen hier -->
+        </div>
+        <div class="player-id">Jouw ID: <span id="player-uid"></span></div>
     </div>
 
     <script>
@@ -1252,8 +1603,15 @@
             
             if (!question) return;
 
+            // Verwijder eerst eventuele bestaande overlays
+            const existingOverlays = document.querySelectorAll('.modal-overlay');
+            existingOverlays.forEach(overlay => overlay.remove());
+
             const modal = document.getElementById('quiz-modal');
-            const overlay = document.getElementById('modal-overlay');
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay active'; // Voeg 'active' class toe
+            overlay.onclick = closeQuizModal; // Sluit bij klik buiten modal
+            
             const questionEl = document.getElementById('quiz-question');
             const optionsEl = document.getElementById('quiz-options');
 
@@ -1272,8 +1630,8 @@
                 optionsEl.appendChild(button);
             });
 
+            document.body.appendChild(overlay);
             modal.style.display = 'block';
-            overlay.style.display = 'block';
         }
 
         function showResultModal(correct) {
@@ -1316,38 +1674,10 @@
             }, 1500);
         }
 
-        function checkAnswer(selected, correct) {
-            const isCorrect = selected === correct;
-            
-            if (isCorrect) {
-                playSound(correctSound);
-                correctAnswersCount++; // Verhoog de teller bij correct antwoord
-                saveGame(); // Sla de nieuwe score op
-                updateStats(); // Update achievements
-            } else {
-                playSound(wrongSound);
-            }
-            
-            showResultModal(isCorrect);
-            
-            setTimeout(() => {
-                if (isCorrect) {
-                    purchaseUpgrade(selectedUpgrade);
-                }
-                closeQuizModal();
-            }, 1500);
-        }
-
-        function closeQuizModal() {
-            document.getElementById('quiz-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-            selectedUpgrade = null;
-        }
-
         function tryPurchaseUpgrade(upgrade) {
             const cost = calculateCost(upgrade);
             if (cookies >= cost) {
-                showQuizModal(upgrade);
+                purchaseUpgrade(upgrade);
             }
         }
 
@@ -1358,11 +1688,16 @@
             cookiesPerSecond = upgrades.reduce((total, upgrade) => {
                 return total + (upgrade.cps * upgrade.count);
             }, 0);
+            
+            // Speel een geluid af bij aankoop
+            playSound(correctSound);
+            
             updateShop();
             updateCounter();
             showUpgradeEffect();
             saveGame();
             updateStats();
+            updatePlayerScore();
         }
 
         function showUpgradeEffect() {
@@ -1379,6 +1714,7 @@
             cookies += cookiesPerSecond;
             updateCounter();
             saveGame();
+            updatePlayerScore();
         }, 1000);
 
         function updateCounter() {
@@ -1393,6 +1729,14 @@
             loadGame();
             calculateOfflineProgress();
             updateShop();
+            playerUID = getPlayerUID();
+            document.getElementById('player-uid').textContent = playerUID;
+            
+            if (cookies > 0) {
+                updatePlayerScore();
+            }
+            
+            updateLeaderboard();
         };
 
         cookieElement.addEventListener('click', (e) => {
@@ -1400,8 +1744,9 @@
             counterElement.textContent = Math.floor(cookies);
             playSound(clickSound);
             updateTitle();
-            
             updateStreak();
+            
+            updatePlayerScore();
             
             const clickEffect = document.createElement('div');
             clickEffect.className = 'cookie-click-effect';
@@ -1471,7 +1816,9 @@
                     earned: a.earned
                 })),
                 achievementNotificationsEnabled: achievementNotificationsEnabled,
-                correctAnswersCount: correctAnswersCount
+                correctAnswersCount: correctAnswersCount,
+                playerUID: playerUID,
+                leaderboard: leaderboardData
             };
             localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
         }
@@ -1480,37 +1827,26 @@
             const savedState = localStorage.getItem('cookieClickerSave');
             if (savedState) {
                 const gameState = JSON.parse(savedState);
-                cookies = gameState.cookies;
-                soundEnabled = gameState.soundEnabled ?? true;
                 
-                // Update de geluid opties weergave
-                const aanOption = document.querySelector('[data-option="aan"]');
-                const uitOption = document.querySelector('[data-option="uit"]');
-                if (aanOption && uitOption) {
-                    aanOption.classList.toggle('active', soundEnabled);
-                    uitOption.classList.toggle('active', !soundEnabled);
+                // Laad basis game data
+                cookies = gameState.cookies || 0;
+                cookiesPerSecond = gameState.cookiesPerSecond || 0;
+                correctAnswersCount = gameState.correctAnswersCount || 0;
+                soundEnabled = gameState.soundEnabled ?? true;
+                achievementNotificationsEnabled = gameState.achievementNotificationsEnabled ?? true;
+                
+                // Laad upgrades
+                if (gameState.upgrades) {
+                    gameState.upgrades.forEach(savedUpgrade => {
+                        const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
+                        if (upgrade) {
+                            upgrade.count = savedUpgrade.count;
+                            upgrade.baseCost = savedUpgrade.baseCost;
+                            upgrade.cps = savedUpgrade.cps;
+                            upgrade.multiplier = savedUpgrade.multiplier;
+                        }
+                    });
                 }
-
-                // Update alle upgrades met opgeslagen waardes
-                gameState.upgrades.forEach(savedUpgrade => {
-                    const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
-                    if (upgrade) {
-                        upgrade.count = savedUpgrade.count;
-                        upgrade.baseCost = savedUpgrade.baseCost;
-                        upgrade.cps = savedUpgrade.cps;
-                        upgrade.multiplier = savedUpgrade.multiplier;
-                    }
-                });
-
-                // Herbereken cookiesPerSecond op basis van geladen upgrades
-                cookiesPerSecond = upgrades.reduce((total, upgrade) => {
-                    return total + (upgrade.cps * upgrade.count);
-                }, 0);
-
-                // Update UI
-                updateCounter();
-                updateShop();
-                updateTitle();
 
                 // Laad achievements
                 if (gameState.achievements) {
@@ -1522,11 +1858,31 @@
                     });
                 }
 
-                achievementNotificationsEnabled = gameState.achievementNotificationsEnabled ?? true;
-                
-                // Update de notification toggle
+                // Laad leaderboard data
+                if (gameState.leaderboard) {
+                    leaderboardData.length = 0;
+                    leaderboardData.push(...gameState.leaderboard);
+                }
+
+                // Laad player ID
+                playerUID = gameState.playerUID || getPlayerUID();
+                document.getElementById('player-uid').textContent = playerUID;
+
+                // Update UI elements
                 document.getElementById('achievement-notifications').checked = achievementNotificationsEnabled;
-                correctAnswersCount = gameState.correctAnswersCount ?? 0;
+                const aanOption = document.querySelector('[data-option="aan"]');
+                const uitOption = document.querySelector('[data-option="uit"]');
+                if (aanOption && uitOption) {
+                    aanOption.classList.toggle('active', soundEnabled);
+                    uitOption.classList.toggle('active', !soundEnabled);
+                }
+
+                // Update alle UI elementen
+                updateCounter();
+                updateShop();
+                updateTitle();
+                updateLeaderboard();
+                updateStats();
             }
         }
 
@@ -1534,6 +1890,11 @@
             showCustomAlert('Weet je zeker dat je het spel wilt resetten? Alle voortgang gaat verloren!', 'warning', () => {
                 // Reset game data
                 localStorage.removeItem('cookieClickerSave');
+                localStorage.removeItem('playerUID');
+                
+                // Verwijder score uit Firebase
+                resetLeaderboardScore();
+                
                 cookies = 0;
                 cookiesPerSecond = 0;
                 
@@ -1547,15 +1908,21 @@
                     achievement.earned = false;
                 });
                 
+                // Reset leaderboard volledig
+                leaderboardData.length = 0;
+                
+                // Genereer nieuwe speler ID
+                playerUID = getPlayerUID();
+                document.getElementById('player-uid').textContent = playerUID;
+                
                 // Update UI
                 updateCounter();
                 updateShop();
                 updateTitle();
                 updateStats();
+                updateLeaderboard();
                 
-                correctAnswersCount = 0; // Reset ook de trivia teller
-                
-                showCustomAlert('Spel is gereset!', 'success');
+                showCustomAlert('Spel is gereset! Je hebt een nieuwe speler ID gekregen.', 'success');
             });
         }
 
@@ -1611,9 +1978,7 @@
         setInterval(saveGame, 60000);
 
         // Voeg deze event listeners toe voor automatisch opslaan
-        window.addEventListener('beforeunload', (e) => {
-            saveGame();
-        });
+        window.addEventListener('beforeunload', saveGame);
 
         // Voeg deze nieuwe functie toe voor custom alerts
         function showCustomAlert(message, type = 'info', callback = null) {
@@ -1698,30 +2063,6 @@
                 icon: '👑',
                 condition: () => cookies >= 100,
                 earned: false
-            },
-            {
-                id: 'trivia_5',
-                name: 'Quiz Beginner',
-                description: 'Beantwoord 5 vragen correct',
-                icon: '📚',
-                condition: () => correctAnswersCount >= 5,
-                earned: false
-            },
-            {
-                id: 'trivia_15',
-                name: 'Trivia Expert',
-                description: 'Beantwoord 15 vragen correct',
-                icon: '🎓',
-                condition: () => correctAnswersCount >= 15,
-                earned: false
-            },
-            {
-                id: 'trivia_master',
-                name: 'Trivia Master',
-                description: 'Beantwoord 30 vragen correct',
-                icon: '🏆',
-                condition: () => correctAnswersCount >= 30,
-                earned: false
             }
         ];
 
@@ -1748,7 +2089,7 @@
                 </div>
             `).join('');
 
-            // Toon statistieken
+            // Toon statistieken (zonder correcte antwoorden)
             statsList.innerHTML = `
                 <div class="stat-item">
                     <span>Totaal Cookies:</span>
@@ -1769,10 +2110,6 @@
                 <div class="stat-item">
                     <span>Achievements Behaald:</span>
                     <span>${achievements.filter(a => a.earned).length}/${achievements.length}</span>
-                </div>
-                <div class="stat-item">
-                    <span>Correcte Antwoorden:</span>
-                    <span>${correctAnswersCount}</span>
                 </div>
             `;
         }
@@ -1838,6 +2175,169 @@
         // Voorkom sluiten bij klikken in shop
         shopContainer.addEventListener('click', (e) => {
             e.stopPropagation();
+        });
+
+        let playerUID = '';
+        const leaderboardData = [];
+
+        // Functie om een willekeurige string te genereren
+        function generateRandomString(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // Functie om een unieke speler ID te genereren of op te halen
+        function getPlayerUID() {
+            let uid = localStorage.getItem('playerUID');
+            if (!uid) {
+                uid = `player_${generateRandomString(4)}`;
+                localStorage.setItem('playerUID', uid);
+            }
+            return uid;
+        }
+
+        playerUID = getPlayerUID();
+        document.getElementById('player-uid').textContent = playerUID;
+
+        // Update de saveGame functie
+        function saveGame() {
+            const gameState = {
+                cookies: cookies,
+                upgrades: upgrades.map(upgrade => ({
+                    id: upgrade.id,
+                    count: upgrade.count,
+                    baseCost: upgrade.baseCost,
+                    cps: upgrade.cps,
+                    multiplier: upgrade.multiplier
+                })),
+                cookiesPerSecond: cookiesPerSecond,
+                lastSaved: Date.now(),
+                soundEnabled: soundEnabled,
+                achievements: achievements.map(a => ({
+                    id: a.id,
+                    earned: a.earned
+                })),
+                achievementNotificationsEnabled: achievementNotificationsEnabled,
+                correctAnswersCount: correctAnswersCount,
+                playerUID: playerUID,
+                leaderboard: leaderboardData
+            };
+            localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
+        }
+
+        // Update de loadGame functie
+        function loadGame() {
+            const savedState = localStorage.getItem('cookieClickerSave');
+            if (savedState) {
+                const gameState = JSON.parse(savedState);
+                
+                // Laad basis game data
+                cookies = gameState.cookies || 0;
+                cookiesPerSecond = gameState.cookiesPerSecond || 0;
+                correctAnswersCount = gameState.correctAnswersCount || 0;
+                soundEnabled = gameState.soundEnabled ?? true;
+                achievementNotificationsEnabled = gameState.achievementNotificationsEnabled ?? true;
+                
+                // Laad upgrades
+                if (gameState.upgrades) {
+                    gameState.upgrades.forEach(savedUpgrade => {
+                        const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
+                        if (upgrade) {
+                            upgrade.count = savedUpgrade.count;
+                            upgrade.baseCost = savedUpgrade.baseCost;
+                            upgrade.cps = savedUpgrade.cps;
+                            upgrade.multiplier = savedUpgrade.multiplier;
+                        }
+                    });
+                }
+
+                // Laad achievements
+                if (gameState.achievements) {
+                    gameState.achievements.forEach(savedAchievement => {
+                        const achievement = achievements.find(a => a.id === savedAchievement.id);
+                        if (achievement) {
+                            achievement.earned = savedAchievement.earned;
+                        }
+                    });
+                }
+
+                // Laad leaderboard data
+                if (gameState.leaderboard) {
+                    leaderboardData.length = 0;
+                    leaderboardData.push(...gameState.leaderboard);
+                }
+
+                // Laad player ID
+                playerUID = gameState.playerUID || getPlayerUID();
+                document.getElementById('player-uid').textContent = playerUID;
+
+                // Update UI elements
+                document.getElementById('achievement-notifications').checked = achievementNotificationsEnabled;
+                const aanOption = document.querySelector('[data-option="aan"]');
+                const uitOption = document.querySelector('[data-option="uit"]');
+                if (aanOption && uitOption) {
+                    aanOption.classList.toggle('active', soundEnabled);
+                    uitOption.classList.toggle('active', !soundEnabled);
+                }
+
+                // Update alle UI elementen
+                updateCounter();
+                updateShop();
+                updateTitle();
+                updateLeaderboard();
+                updateStats();
+            }
+        }
+
+        // Update de resetGame functie
+        function resetGame() {
+            showCustomAlert('Weet je zeker dat je het spel wilt resetten? Alle voortgang gaat verloren!', 'warning', () => {
+                // Reset game data
+                localStorage.removeItem('cookieClickerSave');
+                localStorage.removeItem('playerUID');
+                
+                // Verwijder score uit Firebase
+                resetLeaderboardScore();
+                
+                cookies = 0;
+                cookiesPerSecond = 0;
+                
+                // Reset upgrades
+                upgrades.forEach(upgrade => {
+                    upgrade.count = 0;
+                });
+
+                // Reset achievements
+                achievements.forEach(achievement => {
+                    achievement.earned = false;
+                });
+                
+                // Reset leaderboard volledig
+                leaderboardData.length = 0;
+                
+                // Genereer nieuwe speler ID
+                playerUID = getPlayerUID();
+                document.getElementById('player-uid').textContent = playerUID;
+                
+                // Update UI
+                updateCounter();
+                updateShop();
+                updateTitle();
+                updateStats();
+                updateLeaderboard();
+                
+                showCustomAlert('Spel is gereset! Je hebt een nieuwe speler ID gekregen.', 'success');
+            });
+        }
+
+        // Update mobile leaderboard toggle
+        document.querySelector('.leaderboard-menu-item').addEventListener('click', () => {
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.style.display = leaderboard.style.display === 'none' ? 'block' : 'none';
         });
     </script>
 </body>
