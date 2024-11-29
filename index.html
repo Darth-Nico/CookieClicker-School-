@@ -1168,6 +1168,38 @@
             color: #fff;
             text-decoration: underline;
         }
+
+        /* Voeg deze CSS toe aan de bestaande <style> sectie */
+        .achievements-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-top: 10px;
+        }
+
+        .achievements-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .achievements-container::-webkit-scrollbar-track {
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .achievements-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .achievements-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.5);
+        }
+
+        .player-stats-modal h3 {
+            color: #ffd700;
+            margin: 10px 0;
+            text-align: center;
+        }
     </style>
     <script type="module">
         // Import the functions you need from the SDKs you need
@@ -1197,16 +1229,24 @@
                 const leaderboardList = document.getElementById('leaderboard-list');
                 const data = [];
                 
+                // Controleer eerst of er data is
+                if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
+                        const playerData = childSnapshot.val();
+                        // Voeg alleen spelers toe met geldige data
+                        if (playerData && playerData.uid && typeof playerData.score === 'number') {
                     data.push({
-                        uid: childSnapshot.val().uid,
-                        score: childSnapshot.val().score
+                                uid: playerData.uid,
+                                score: playerData.score
                     });
+                        }
                 });
                 
                 // Sorteer de data van hoog naar laag
                 const sortedData = data.sort((a, b) => b.score - a.score).slice(0, 10);
                 
+                    // Controleer of er gesorteerde data is
+                    if (sortedData.length > 0) {
                 leaderboardList.innerHTML = sortedData.map((entry, index) => `
                     <div class="leaderboard-item ${entry.uid === playerUID ? 'current-player' : ''}">
                         <span class="leaderboard-rank">#${index + 1}</span>
@@ -1214,6 +1254,28 @@
                         <span class="leaderboard-score">${Math.floor(entry.score)}</span>
                     </div>
                 `).join('');
+                    } else {
+                        leaderboardList.innerHTML = `
+                            <div class="leaderboard-item">
+                                <span>Nog geen scores beschikbaar</span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    leaderboardList.innerHTML = `
+                        <div class="leaderboard-item">
+                            <span>Nog geen scores beschikbaar</span>
+                        </div>
+                    `;
+                }
+            }, (error) => {
+                console.error("Error fetching leaderboard:", error);
+                const leaderboardList = document.getElementById('leaderboard-list');
+                leaderboardList.innerHTML = `
+                    <div class="leaderboard-item">
+                        <span>Fout bij het laden van de scores</span>
+                    </div>
+                `;
             });
         }
 
@@ -1225,7 +1287,14 @@
                 uid: playerUID,
                 score: Math.floor(cookies),
                 cookiesPerSecond: cookiesPerSecond,
-                lastUpdated: Date.now()
+                lastUpdated: Date.now(),
+                // Voeg achievements toe
+                achievements: achievements.reduce((acc, achievement) => {
+                    if (achievement.earned) {
+                        acc[achievement.id] = true;
+                    }
+                    return acc;
+                }, {})
             }).catch(error => {
                 console.error("Error updating score:", error);
             });
@@ -1251,6 +1320,21 @@
                 // Maak de modal
                 const modal = document.createElement('div');
                 modal.className = 'player-stats-modal';
+                
+                // Genereer achievements HTML
+                const achievementsHTML = achievements.map(achievement => {
+                    const isEarned = playerData.achievements && playerData.achievements[achievement.id];
+                    return `
+                        <div class="achievement-item ${isEarned ? '' : 'locked'}">
+                            <div class="achievement-icon">${achievement.icon}</div>
+                            <div class="achievement-info">
+                                <div class="achievement-name">${achievement.name}</div>
+                                <div class="achievement-desc">${achievement.description}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
                 modal.innerHTML = `
                     <div class="player-stats-header">
                         <div class="player-stats-id">${playerData.uid}</div>
@@ -1274,6 +1358,11 @@
                                 <span>Dit ben jij! 👑</span>
                             </div>
                         ` : ''}
+                        <div class="stats-divider"></div>
+                        <h3>Achievements</h3>
+                        <div class="achievements-container">
+                            ${achievementsHTML}
+                        </div>
                     </div>
                 `;
                 
@@ -1732,10 +1821,8 @@
             playerUID = getPlayerUID();
             document.getElementById('player-uid').textContent = playerUID;
             
-            if (cookies > 0) {
-                updatePlayerScore();
-            }
-            
+            // Initialiseer de score en update de leaderboard
+            initializePlayerScore();
             updateLeaderboard();
         };
 
@@ -2203,135 +2290,11 @@
         playerUID = getPlayerUID();
         document.getElementById('player-uid').textContent = playerUID;
 
-        // Update de saveGame functie
-        function saveGame() {
-            const gameState = {
-                cookies: cookies,
-                upgrades: upgrades.map(upgrade => ({
-                    id: upgrade.id,
-                    count: upgrade.count,
-                    baseCost: upgrade.baseCost,
-                    cps: upgrade.cps,
-                    multiplier: upgrade.multiplier
-                })),
-                cookiesPerSecond: cookiesPerSecond,
-                lastSaved: Date.now(),
-                soundEnabled: soundEnabled,
-                achievements: achievements.map(a => ({
-                    id: a.id,
-                    earned: a.earned
-                })),
-                achievementNotificationsEnabled: achievementNotificationsEnabled,
-                correctAnswersCount: correctAnswersCount,
-                playerUID: playerUID,
-                leaderboard: leaderboardData
-            };
-            localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
-        }
-
-        // Update de loadGame functie
-        function loadGame() {
-            const savedState = localStorage.getItem('cookieClickerSave');
-            if (savedState) {
-                const gameState = JSON.parse(savedState);
-                
-                // Laad basis game data
-                cookies = gameState.cookies || 0;
-                cookiesPerSecond = gameState.cookiesPerSecond || 0;
-                correctAnswersCount = gameState.correctAnswersCount || 0;
-                soundEnabled = gameState.soundEnabled ?? true;
-                achievementNotificationsEnabled = gameState.achievementNotificationsEnabled ?? true;
-                
-                // Laad upgrades
-                if (gameState.upgrades) {
-                    gameState.upgrades.forEach(savedUpgrade => {
-                        const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
-                        if (upgrade) {
-                            upgrade.count = savedUpgrade.count;
-                            upgrade.baseCost = savedUpgrade.baseCost;
-                            upgrade.cps = savedUpgrade.cps;
-                            upgrade.multiplier = savedUpgrade.multiplier;
-                        }
-                    });
-                }
-
-                // Laad achievements
-                if (gameState.achievements) {
-                    gameState.achievements.forEach(savedAchievement => {
-                        const achievement = achievements.find(a => a.id === savedAchievement.id);
-                        if (achievement) {
-                            achievement.earned = savedAchievement.earned;
-                        }
-                    });
-                }
-
-                // Laad leaderboard data
-                if (gameState.leaderboard) {
-                    leaderboardData.length = 0;
-                    leaderboardData.push(...gameState.leaderboard);
-                }
-
-                // Laad player ID
-                playerUID = gameState.playerUID || getPlayerUID();
-                document.getElementById('player-uid').textContent = playerUID;
-
-                // Update UI elements
-                document.getElementById('achievement-notifications').checked = achievementNotificationsEnabled;
-                const aanOption = document.querySelector('[data-option="aan"]');
-                const uitOption = document.querySelector('[data-option="uit"]');
-                if (aanOption && uitOption) {
-                    aanOption.classList.toggle('active', soundEnabled);
-                    uitOption.classList.toggle('active', !soundEnabled);
-                }
-
-                // Update alle UI elementen
-                updateCounter();
-                updateShop();
-                updateTitle();
-                updateLeaderboard();
-                updateStats();
+        // Voeg ook deze functie toe om ervoor te zorgen dat de score direct wordt geüpdatet
+        function initializePlayerScore() {
+            if (cookies > 0) {
+                updatePlayerScore();
             }
-        }
-
-        // Update de resetGame functie
-        function resetGame() {
-            showCustomAlert('Weet je zeker dat je het spel wilt resetten? Alle voortgang gaat verloren!', 'warning', () => {
-                // Reset game data
-                localStorage.removeItem('cookieClickerSave');
-                localStorage.removeItem('playerUID');
-                
-                // Verwijder score uit Firebase
-                resetLeaderboardScore();
-                
-                cookies = 0;
-                cookiesPerSecond = 0;
-                
-                // Reset upgrades
-                upgrades.forEach(upgrade => {
-                    upgrade.count = 0;
-                });
-
-                // Reset achievements
-                achievements.forEach(achievement => {
-                    achievement.earned = false;
-                });
-                
-                // Reset leaderboard volledig
-                leaderboardData.length = 0;
-                
-                // Genereer nieuwe speler ID
-                playerUID = getPlayerUID();
-                document.getElementById('player-uid').textContent = playerUID;
-                
-                // Update UI
-                updateCounter();
-                updateShop();
-                updateTitle();
-                updateStats();
-                updateLeaderboard();
-                
-                showCustomAlert('Spel is gereset! Je hebt een nieuwe speler ID gekregen.', 'success');
-            });
         }
 
         // Update mobile leaderboard toggle

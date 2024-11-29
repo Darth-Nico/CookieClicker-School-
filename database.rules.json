@@ -1,0 +1,27 @@
+{
+  "rules": {
+    "leaderboard": {
+      ".read": true,
+      ".write": true,
+      "$uid": {
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "score": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "cookiesPerSecond": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "lastUpdated": {
+          ".validate": "newData.isNumber()"
+        },
+        "achievements": {
+          "$achievement": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    }
+  }
+} 
