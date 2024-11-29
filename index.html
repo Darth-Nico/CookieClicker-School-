@@ -1225,7 +1225,14 @@
                 uid: playerUID,
                 score: Math.floor(cookies),
                 cookiesPerSecond: cookiesPerSecond,
-                lastUpdated: Date.now()
+                lastUpdated: Date.now(),
+                correctAnswers: correctAnswersCount,
+                achievements: achievements.reduce((acc, achievement) => {
+                    if (achievement.earned) {
+                        acc[achievement.id] = true;
+                    }
+                    return acc;
+                }, {})
             }).catch(error => {
                 console.error("Error updating score:", error);
             });
@@ -1274,6 +1281,10 @@
                                 <span>Dit ben jij! 👑</span>
                             </div>
                         ` : ''}
+                        <div class="player-stat-item">
+                            <span>Correcte Antwoorden:</span>
+                            <span>${playerData.correctAnswers || 0}</span>
+                        </div>
                     </div>
                 `;
                 
@@ -1449,64 +1460,54 @@
         // Update de dutchQuestions array
         const dutchQuestions = [
             {
-                question: "Welke planeet staat het dichtst bij de zon?",
-                correct_answer: "Mercurius",
-                incorrect_answers: ["Venus", "Mars", "Jupiter"]
+                question: "Wat is de hoofdstad van Nederland?",
+                correct_answer: "Amsterdam",
+                incorrect_answers: ["Rotterdam", "Den Haag", "Utrecht"]
             },
             {
-                question: "Hoeveel harten heeft een octopus?",
-                correct_answer: "3",
-                incorrect_answers: ["1", "2", "4"]
+                question: "In welk jaar werd Willem-Alexander koning van Nederland?",
+                correct_answer: "2013",
+                incorrect_answers: ["2010", "2015", "2012"]
             },
             {
-                question: "Wat is de hoofdstad van Japan?",
-                correct_answer: "Tokyo",
-                incorrect_answers: ["Kyoto", "Osaka", "Hiroshima"]
+                question: "Hoeveel provincies heeft Nederland?",
+                correct_answer: "12",
+                incorrect_answers: ["10", "11", "13"]
             },
             {
-                question: "Welk element heeft het symbool 'Au'?",
-                correct_answer: "Goud",
-                incorrect_answers: ["Zilver", "Koper", "Aluminium"]
+                question: "Welke kleur heeft de bovenste baan van de Nederlandse vlag?",
+                correct_answer: "Rood",
+                incorrect_answers: ["Wit", "Blauw", "Oranje"]
             },
             {
-                question: "Wie schreef 'Romeo en Julia'?",
-                correct_answer: "William Shakespeare",
-                incorrect_answers: ["Charles Dickens", "Jane Austen", "Mark Twain"]
+                question: "Wat is de langste rivier van Nederland?",
+                correct_answer: "Rijn",
+                incorrect_answers: ["Maas", "Waal", "IJssel"]
             },
             {
-                question: "Hoeveel botten heeft een volwassen mens gemiddeld?",
-                correct_answer: "206",
-                incorrect_answers: ["186", "216", "196"]
+                question: "Welk Nederlands gerecht bestaat uit aardappelen, groenten en vlees?",
+                correct_answer: "Stamppot",
+                incorrect_answers: ["Poffertjes", "Stroopwafel", "Bitterballen"]
             },
             {
-                question: "Wat is de snelste vogel ter wereld?",
-                correct_answer: "Slechtvalk",
-                incorrect_answers: ["Struisvogel", "Adelaar", "Kolibrie"]
+                question: "Welke Nederlandse schilder sneed zijn eigen oor af?",
+                correct_answer: "Vincent van Gogh",
+                incorrect_answers: ["Rembrandt", "Johannes Vermeer", "Frans Hals"]
             },
             {
-                question: "In welk jaar landde de eerste mens op de maan?",
-                correct_answer: "1969",
-                incorrect_answers: ["1965", "1971", "1973"]
+                question: "Wat is de bijnaam van het Nederlands voetbalelftal?",
+                correct_answer: "Oranje",
+                incorrect_answers: ["Leeuwen", "Tulpen", "Windmolens"]
             },
             {
-                question: "Wat is de langste rivier ter wereld?",
-                correct_answer: "Nijl",
-                incorrect_answers: ["Amazone", "Mississippi", "Yangtze"]
+                question: "Welk Nederlands bedrijf is bekend om zijn bier?",
+                correct_answer: "Heineken",
+                incorrect_answers: ["Shell", "Philips", "Unilever"]
             },
             {
-                question: "Hoeveel zijden heeft een kubus?",
-                correct_answer: "6",
-                incorrect_answers: ["4", "8", "12"]
-            },
-            {
-                question: "Welk jaar heeft 366 dagen?",
-                correct_answer: "Schrikkeljaar",
-                incorrect_answers: ["Normaal jaar", "Winterjaar", "Zomerjaar"]
-            },
-            {
-                question: "Wat is de hardste natuurlijke stof op aarde?",
-                correct_answer: "Diamant",
-                incorrect_answers: ["Graniet", "IJzer", "Titanium"]
+                question: "Hoeveel meter ligt een groot deel van Nederland onder zeeniveau?",
+                correct_answer: "6,7 meter",
+                incorrect_answers: ["3,2 meter", "5,1 meter", "8,3 meter"]
             }
         ];
 
@@ -1599,85 +1600,93 @@
 
         async function showQuizModal(upgrade) {
             selectedUpgrade = upgrade;
-            const question = await fetchTriviaQuestion();
             
-            if (!question) return;
-
-            // Verwijder eerst eventuele bestaande overlays
-            const existingOverlays = document.querySelectorAll('.modal-overlay');
-            existingOverlays.forEach(overlay => overlay.remove());
+            // Kies een willekeurige vraag
+            const randomIndex = Math.floor(Math.random() * dutchQuestions.length);
+            const question = dutchQuestions[randomIndex];
 
             const modal = document.getElementById('quiz-modal');
             const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay active'; // Voeg 'active' class toe
-            overlay.onclick = closeQuizModal; // Sluit bij klik buiten modal
+            overlay.className = 'modal-overlay active';
             
             const questionEl = document.getElementById('quiz-question');
             const optionsEl = document.getElementById('quiz-options');
 
             questionEl.innerHTML = question.question;
             
+            // Mix de antwoorden
             const options = [...question.incorrect_answers, question.correct_answer]
                 .sort(() => Math.random() - 0.5);
 
-            optionsEl.innerHTML = '';
-            options.forEach(option => {
-                const button = document.createElement('div');
-                button.className = 'quiz-option';
-                button.innerHTML = option;
-                button.dataset.answer = option;
-                button.onclick = () => checkAnswer(option, question.correct_answer);
-                optionsEl.appendChild(button);
-            });
+            optionsEl.innerHTML = options.map(option => `
+                <div class="quiz-option" onclick="checkAnswer('${option}', '${question.correct_answer}')">
+                    ${option}
+                </div>
+            `).join('');
 
             document.body.appendChild(overlay);
             modal.style.display = 'block';
+        }
+
+        function checkAnswer(selected, correct) {
+            const isCorrect = selected === correct;
+            
+            closeQuizModal();
+            removeAllOverlays();
+            
+            setTimeout(() => {
+                if (isCorrect) {
+                    correctAnswersCount++;
+                    playSound(correctSound);
+                    showResultModal(true);
+                    purchaseUpgrade(selectedUpgrade);
+                    updateStats(); // Check achievements
+                    updatePlayerScore(); // Update leaderboard
+                } else {
+                    playSound(wrongSound);
+                    showResultModal(false);
+                }
+            }, 100);
         }
 
         function showResultModal(correct) {
             const modal = document.createElement('div');
             modal.className = `result-modal ${correct ? 'correct' : 'incorrect'}`;
             
-            const icon = correct ? '✅' : '❌';
-            const text = correct ? 'Correct!' : 'Helaas, dat is niet correct!';
-            
             modal.innerHTML = `
-                <div class="result-icon">${icon}</div>
-                <div class="result-text">${text}</div>
+                <div class="result-icon">${correct ? '✅' : '❌'}</div>
+                <div class="result-text">
+                    ${correct ? 'Goed gedaan!' : 'Helaas, dat is niet correct!'}
+                </div>
             `;
             
             document.body.appendChild(modal);
-
-            // Voeg particles toe voor correct antwoord
-            if (correct) {
-                for (let i = 0; i < 20; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'result-particles';
-                    particle.style.backgroundColor = '#4CAF50';
-                    
-                    // Random positie en richting
-                    const angle = (Math.random() * Math.PI * 2);
-                    const distance = 100 + Math.random() * 100;
-                    const tx = Math.cos(angle) * distance;
-                    const ty = Math.sin(angle) * distance;
-                    
-                    particle.style.setProperty('--tx', `${tx}px`);
-                    particle.style.setProperty('--ty', `${ty}px`);
-                    
-                    modal.appendChild(particle);
-                }
-            }
-
-            // Verwijder de modal na 1.5 seconden
+            
             setTimeout(() => {
                 modal.remove();
+                removeAllOverlays(); // Verwijder eventuele overgebleven overlays
             }, 1500);
+        }
+
+        function closeQuizModal() {
+            const modal = document.getElementById('quiz-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            removeAllOverlays();
+        }
+
+        function removeAllOverlays() {
+            const overlays = document.querySelectorAll('.modal-overlay');
+            overlays.forEach(overlay => {
+                overlay.remove();
+            });
         }
 
         function tryPurchaseUpgrade(upgrade) {
             const cost = calculateCost(upgrade);
             if (cookies >= cost) {
-                purchaseUpgrade(upgrade);
+                showQuizModal(upgrade);
             }
         }
 
@@ -1816,9 +1825,7 @@
                     earned: a.earned
                 })),
                 achievementNotificationsEnabled: achievementNotificationsEnabled,
-                correctAnswersCount: correctAnswersCount,
-                playerUID: playerUID,
-                leaderboard: leaderboardData
+                correctAnswersCount: correctAnswersCount
             };
             localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
         }
@@ -1888,15 +1895,12 @@
 
         function resetGame() {
             showCustomAlert('Weet je zeker dat je het spel wilt resetten? Alle voortgang gaat verloren!', 'warning', () => {
-                // Reset game data
-                localStorage.removeItem('cookieClickerSave');
-                localStorage.removeItem('playerUID');
-                
-                // Verwijder score uit Firebase
-                resetLeaderboardScore();
-                
+                // Reset alle game variabelen
                 cookies = 0;
                 cookiesPerSecond = 0;
+                correctAnswersCount = 0;
+                streakCount = 0;
+                clickStreak = 0;
                 
                 // Reset upgrades
                 upgrades.forEach(upgrade => {
@@ -1908,21 +1912,21 @@
                     achievement.earned = false;
                 });
                 
-                // Reset leaderboard volledig
-                leaderboardData.length = 0;
+                // Reset Firebase data
+                resetLeaderboardScore();
                 
-                // Genereer nieuwe speler ID
-                playerUID = getPlayerUID();
-                document.getElementById('player-uid').textContent = playerUID;
+                // Reset localStorage
+                localStorage.clear();
                 
-                // Update UI
+                // Update alle UI elementen
                 updateCounter();
                 updateShop();
                 updateTitle();
                 updateStats();
                 updateLeaderboard();
                 
-                showCustomAlert('Spel is gereset! Je hebt een nieuwe speler ID gekregen.', 'success');
+                // Toon bevestiging
+                showCustomAlert('Je spel is gereset!', 'success');
             });
         }
 
@@ -2063,6 +2067,30 @@
                 icon: '👑',
                 condition: () => cookies >= 100,
                 earned: false
+            },
+            {
+                id: 'first_quiz',
+                name: 'Slimmerik',
+                description: 'Beantwoord je eerste vraag correct',
+                icon: '🎓',
+                condition: () => correctAnswersCount >= 1,
+                earned: false
+            },
+            {
+                id: 'quiz_master',
+                name: 'Quiz Master',
+                description: 'Beantwoord 10 vragen correct',
+                icon: '🏆',
+                condition: () => correctAnswersCount >= 10,
+                earned: false
+            },
+            {
+                id: 'quiz_genius',
+                name: 'Quiz Genie',
+                description: 'Beantwoord 25 vragen correct',
+                icon: '🧠',
+                condition: () => correctAnswersCount >= 25,
+                earned: false
             }
         ];
 
@@ -2100,6 +2128,14 @@
                     <span>${cookiesPerSecond.toFixed(1)}</span>
                 </div>
                 <div class="stat-item">
+                    <span>Correcte Antwoorden:</span>
+                    <span>${correctAnswersCount}</span>
+                </div>
+                <div class="stat-item">
+                    <span>Quiz Score:</span>
+                    <span>${Math.round((correctAnswersCount / (correctAnswersCount + incorrectAnswersCount || 1)) * 100)}%</span>
+                </div>
+                <div class="stat-item">
                     <span>Aantal Cursors:</span>
                     <span>${upgrades.find(u => u.id === 'cursor').count}</span>
                 </div>
@@ -2132,6 +2168,7 @@
 
         function closeStatsModal() {
             document.getElementById('stats-modal').style.display = 'none';
+            removeAllOverlays();
         }
 
         // Update de click handlers voor de statistieken knop
@@ -2222,9 +2259,7 @@
                     earned: a.earned
                 })),
                 achievementNotificationsEnabled: achievementNotificationsEnabled,
-                correctAnswersCount: correctAnswersCount,
-                playerUID: playerUID,
-                leaderboard: leaderboardData
+                correctAnswersCount: correctAnswersCount
             };
             localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
         }
@@ -2296,15 +2331,12 @@
         // Update de resetGame functie
         function resetGame() {
             showCustomAlert('Weet je zeker dat je het spel wilt resetten? Alle voortgang gaat verloren!', 'warning', () => {
-                // Reset game data
-                localStorage.removeItem('cookieClickerSave');
-                localStorage.removeItem('playerUID');
-                
-                // Verwijder score uit Firebase
-                resetLeaderboardScore();
-                
+                // Reset alle game variabelen
                 cookies = 0;
                 cookiesPerSecond = 0;
+                correctAnswersCount = 0;
+                streakCount = 0;
+                clickStreak = 0;
                 
                 // Reset upgrades
                 upgrades.forEach(upgrade => {
@@ -2316,21 +2348,21 @@
                     achievement.earned = false;
                 });
                 
-                // Reset leaderboard volledig
-                leaderboardData.length = 0;
+                // Reset Firebase data
+                resetLeaderboardScore();
                 
-                // Genereer nieuwe speler ID
-                playerUID = getPlayerUID();
-                document.getElementById('player-uid').textContent = playerUID;
+                // Reset localStorage
+                localStorage.clear();
                 
-                // Update UI
+                // Update alle UI elementen
                 updateCounter();
                 updateShop();
                 updateTitle();
                 updateStats();
                 updateLeaderboard();
                 
-                showCustomAlert('Spel is gereset! Je hebt een nieuwe speler ID gekregen.', 'success');
+                // Toon bevestiging
+                showCustomAlert('Je spel is gereset!', 'success');
             });
         }
 
