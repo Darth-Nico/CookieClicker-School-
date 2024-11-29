@@ -1168,6 +1168,79 @@
             color: #fff;
             text-decoration: underline;
         }
+
+        .achievements-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .achievements-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .achievements-grid::-webkit-scrollbar-track {
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .achievements-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .achievements-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.5);
+        }
+
+        .player-stats-modal {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .player-stats-modal h3 {
+            color: #ffd700;
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        .achievement-item {
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .achievement-item.locked {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .achievement-info {
+            flex-grow: 1;
+        }
+
+        .achievement-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
     </style>
     <script type="module">
         // Import the functions you need from the SDKs you need
@@ -1258,34 +1331,130 @@
                 // Maak de modal
                 const modal = document.createElement('div');
                 modal.className = 'player-stats-modal';
+                
+                // Bereken achievement voortgang
+                const earnedAchievements = playerData.achievements ? Object.keys(playerData.achievements).length : 0;
+                const totalAchievements = achievements.length;
+                
                 modal.innerHTML = `
                     <div class="player-stats-header">
                         <div class="player-stats-id">${playerData.uid}</div>
                         <div class="player-stats-close" onclick="closePlayerStatsModal(this)">×</div>
                     </div>
                     <div class="player-stats-content">
+                        <h3>Algemene Statistieken</h3>
                         <div class="player-stat-item">
                             <span>Totaal Cookies:</span>
                             <span>${Math.floor(playerData.score).toLocaleString()}</span>
                         </div>
                         <div class="player-stat-item">
-                            <span>Rang:</span>
-                            <span>#${await getPlayerRank(playerData.score)}</span>
-                        </div>
-                        <div class="player-stat-item">
                             <span>Cookies per seconde:</span>
                             <span>${(playerData.cookiesPerSecond || 0).toFixed(1)}</span>
+                        </div>
+                        <div class="player-stat-item">
+                            <span>Correcte Antwoorden:</span>
+                            <span>${playerData.correctAnswers || 0}</span>
+                        </div>
+                        
+                        <div class="stats-divider"></div>
+                        <h3>Achievements (${earnedAchievements}/${totalAchievements})</h3>
+                        <div class="achievements-grid">
+                            ${achievements.map(achievement => {
+                                const isEarned = playerData.achievements && playerData.achievements[achievement.id];
+                                return `
+                                    <div class="achievement-item ${isEarned ? '' : 'locked'}">
+                                        <div class="achievement-icon">${achievement.icon}</div>
+                                        <div class="achievement-info">
+                                            <div class="achievement-name">${achievement.name}</div>
+                                            <div class="achievement-desc">${achievement.description}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                         ${playerData.uid === playerUID ? `
                             <div class="player-stat-item current-player-stat">
                                 <span>Dit ben jij! 👑</span>
                             </div>
                         ` : ''}
-                        <div class="player-stat-item">
-                            <span>Correcte Antwoorden:</span>
-                            <span>${playerData.correctAnswers || 0}</span>
-                        </div>
                     </div>
+                `;
+                
+                // Voeg CSS styles toe voor de achievements grid
+                const style = document.createElement('style');
+                style.textContent = `
+                    .achievements-grid {
+                        display: grid;
+                        gap: 10px;
+                        margin-top: 10px;
+                        max-height: 300px;
+                        overflow-y: auto;
+                        padding-right: 10px;
+                    }
+                    
+                    .achievements-grid::-webkit-scrollbar {
+                        width: 8px;
+                    }
+                    
+                    .achievements-grid::-webkit-scrollbar-track {
+                        background: rgba(255, 215, 0, 0.1);
+                        border-radius: 4px;
+                    }
+                    
+                    .achievements-grid::-webkit-scrollbar-thumb {
+                        background: rgba(255, 215, 0, 0.3);
+                        border-radius: 4px;
+                    }
+                    
+                    .achievements-grid::-webkit-scrollbar-thumb:hover {
+                        background: rgba(255, 215, 0, 0.5);
+                    }
+                    
+                    .player-stats-modal {
+                        max-height: 80vh;
+                        overflow-y: auto;
+                    }
+                    
+                    .player-stats-modal h3 {
+                        color: #ffd700;
+                        margin: 10px 0;
+                        font-size: 1.2em;
+                    }
+                    
+                    .achievement-item {
+                        background: rgba(255, 215, 0, 0.1);
+                        border-radius: 8px;
+                        padding: 10px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        transition: 0.3s;
+                    }
+                    
+                    .achievement-item.locked {
+                        opacity: 0.5;
+                        filter: grayscale(1);
+                    }
+                    
+                    .achievement-icon {
+                        font-size: 24px;
+                        min-width: 40px;
+                        text-align: center;
+                    }
+                    
+                    .achievement-info {
+                        flex-grow: 1;
+                    }
+                    
+                    .achievement-name {
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    }
+                    
+                    .achievement-desc {
+                        font-size: 0.9em;
+                        opacity: 0.8;
+                    }
                 `;
                 
                 // Voeg de overlay toe
@@ -1293,6 +1462,7 @@
                 overlay.className = 'modal-overlay active';
                 overlay.onclick = () => closePlayerStatsModal(modal.querySelector('.player-stats-close'));
                 
+                document.head.appendChild(style);
                 document.body.appendChild(overlay);
                 document.body.appendChild(modal);
                 
